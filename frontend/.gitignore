@@ -1,0 +1,11 @@
+# Dependencies
+node_modules/
+
+# Real environment variables
+.env
+
+# Example template
+!.env.example
+
+# Vite build output
+dist/

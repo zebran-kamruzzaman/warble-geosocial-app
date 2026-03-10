@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+/* 
+  Leaflet requires an explicit height on the map container.
+  Without this the map renders as 0px tall and shows nothing.
+  We set the map div to fill its parent, so we control height 
+  from the parent element in the component.
+*/
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+}

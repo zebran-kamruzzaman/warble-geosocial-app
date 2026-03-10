@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--  Dapper: lightweight SQL mapper, maps query results to C# objects  -->
+    <PackageReference Include="Dapper" Version="2.1.28" />
+
+    <!--  Npgsql: PostgreSQL driver for .NET  -->
+    <PackageReference Include="Npgsql" Version="8.0.3" />
+
+    <!--  BCrypt: password hashing  -->
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+
+    <!--  JWT: authentication via signed tokens  -->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
+  </ItemGroup>
+
+</Project>
