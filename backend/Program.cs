@@ -25,7 +25,7 @@ Console.WriteLine($">>> CORS origin set to: {frontendOrigin}");
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Frontend", policy =>
-        policy.WithOrigins(frontendOrigin)
+        policy.SetIsOriginAllowed(_ => true)
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials());
