@@ -11,19 +11,17 @@ DefaultTypeMap.MatchNamesWithUnderscores = true;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ── Controllers ────────────────────────────────────────────────────────────────
 builder.Services.AddControllers();
 
 // ── CORS ───────────────────────────────────────────────────────────────────────
-// Browsers block cross-origin requests by default.
-// This policy explicitly allows the frontend (on Vercel) to call the API (on Railway).
-// AllowCredentials() is required for SignalR WebSocket connections.
-// WithOrigins must be a specific URL — wildcards don't work with AllowCredentials.
+// Read from flat env var first (Railway), fall back to config (local)
 var frontendOrigin = 
     Environment.GetEnvironmentVariable("FRONTEND_ORIGIN") ??
     builder.Configuration["Frontend:Origin"] ?? 
     "http://localhost:5173";
-    
+
+Console.WriteLine($">>> CORS origin set to: {frontendOrigin}");
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Frontend", policy =>
@@ -34,8 +32,6 @@ builder.Services.AddCors(options =>
 });
 
 // ── SignalR ────────────────────────────────────────────────────────────────────
-// SignalR is built into ASP.NET Core — no extra NuGet package needed.
-// It handles WebSocket connections, falls back to long-polling if needed.
 builder.Services.AddSignalR();
 
 // ── Database ───────────────────────────────────────────────────────────────────
@@ -51,7 +47,7 @@ builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<PostService>();
 builder.Services.AddScoped<GeoService>();
 
-// ── JWT Authentication ─────────────────────────────────────────────────────────
+// ── JWT ────────────────────────────────────────────────────────────────────────
 var jwtSecret = builder.Configuration["Jwt:Secret"]!;
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -65,8 +61,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = false
         };
 
-        // SignalR sends the token via query string, not headers.
-        // This tells the JWT middleware where to find it for hub connections.
         options.Events = new JwtBearerEvents
         {
             OnMessageReceived = context =>
@@ -82,19 +76,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
-// ── Build & Middleware ─────────────────────────────────────────────────────────
 var app = builder.Build();
 
-// Order is important.
-// CORS must come before authentication and routing.
+// Order matters — CORS must be first
 app.UseCors("Frontend");
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
-// Map the SignalR hub to a URL path.
-// The frontend connects to: wss://your-api.railway.app/hubs/posts
 app.MapHub<PostHub>("/hubs/posts");
 
 app.Run();
