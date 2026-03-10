@@ -19,8 +19,11 @@ builder.Services.AddControllers();
 // This policy explicitly allows the frontend (on Vercel) to call the API (on Railway).
 // AllowCredentials() is required for SignalR WebSocket connections.
 // WithOrigins must be a specific URL — wildcards don't work with AllowCredentials.
-var frontendOrigin = builder.Configuration["Frontend:Origin"] ?? "http://localhost:5173";
-
+var frontendOrigin = 
+    Environment.GetEnvironmentVariable("FRONTEND_ORIGIN") ??
+    builder.Configuration["Frontend:Origin"] ?? 
+    "http://localhost:5173";
+    
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Frontend", policy =>
