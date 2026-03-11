@@ -41,4 +41,9 @@ public class PostService
         // The post object is serialized to JSON automatically.
         await _hub.Clients.All.SendAsync("NewPost", post);
     }
+
+    public async Task<bool> DeleteAsync(Guid postId, Guid userId)
+    {
+        return await _posts.DeleteAsync(postId, userId);
+    }
 }

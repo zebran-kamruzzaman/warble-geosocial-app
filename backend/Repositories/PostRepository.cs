@@ -35,6 +35,19 @@ public class PostRepository
         );
     }
 
+    // Deletes a post only if it belongs to the requesting user.
+    // The WHERE clause on both id AND user_id means a user cannot
+    // delete someone else's post even if they know the post's id.
+    public async Task<bool> DeleteAsync(Guid postId, Guid userId)
+    {
+        using var conn = _factory.Create();
+        var rows = await conn.ExecuteAsync(
+            "DELETE FROM posts WHERE id = @PostId AND user_id = @UserId",
+            new { PostId = postId, UserId = userId }
+        );
+        return rows > 0;
+    }
+
     // Fetches all posts within `radiusMeters` of the given coordinates.
     //
     // ST_DWithin(location, point, radius) uses the spatial index automatically.

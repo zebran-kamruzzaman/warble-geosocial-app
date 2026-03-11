@@ -41,4 +41,21 @@ public class PostsController : ControllerBase
 
         return Ok(new { message = "Post created." });
     }
+
+    // DELETE /api/posts/{id}
+    // Requires authentication — the user can only delete their own posts.
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userIdString == null) return Unauthorized();
+
+        var userId = Guid.Parse(userIdString);
+        var deleted = await _postService.DeleteAsync(id, userId);
+
+        if (!deleted)
+            return NotFound(new { message = "Post not found or not yours." });
+
+        return Ok(new { message = "Post deleted." });
+    }
 }

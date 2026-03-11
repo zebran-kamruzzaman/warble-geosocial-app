@@ -76,6 +76,13 @@ export default function Home() {
     setFlyTo([post.latitude, post.longitude])
   }
 
+  // Remove the deleted post from state immediately —
+  // no refetch needed, just filter it out of the array.
+  const handleDeletePost = (postId) => {
+    setPosts((prev) => prev.filter((p) => p.id !== postId))
+    if (highlightedId === postId) setHighlightedId(null)
+  }
+
   return (
     <div className="flex flex-col md:flex-row h-[calc(100vh-52px)] bg-slate-900">
       {/* Location denied banner */}
@@ -91,6 +98,7 @@ export default function Home() {
           posts={posts}
           highlightedId={highlightedId}
           onPostClick={handlePostClick}
+          onDeletePost={handleDeletePost}
           userLocation={userLocation}
         />
       </div>

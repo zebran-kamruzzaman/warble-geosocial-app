@@ -56,6 +56,14 @@ export async function createPost(content, latitude, longitude) {
   return res
 }
 
+export async function deletePost(postId) {
+  const res = await fetch(`${API_URL}/api/posts/${postId}`, {
+    method: 'DELETE',
+    headers: headers(),
+  })
+  return res
+}
+
 // radius is in metres. Default 5000m (5km) gives a useful city-scale view.
 export async function getNearbyPosts(lat, lng, radius = 5000) {
   const res = await fetch(

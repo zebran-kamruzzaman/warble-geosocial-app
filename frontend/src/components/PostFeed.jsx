@@ -1,88 +1,68 @@
-import { useState } from 'react'
-import PostCard from './PostCard'
-import { createPost } from '../api/client'
-import { useAuth } from '../hooks/useAuth.jsx'
-
-export default function PostFeed({ posts, highlightedId, onPostClick, onNewPost, userLocation }) {
+// onDelete is called after a successful delete so the parent
+// can remove the post from state without a full refetch.
+export default function PostCard({ post, highlighted, onClick, onDelete }) {
   const { user } = useAuth()
-  const [content, setContent] = useState('')
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState('')
+  const [deleting, setDeleting] = useState(false)
 
-  const handleSubmit = async () => {
-    if (!content.trim()) return
-    if (!userLocation) {
-      setError('Waiting for your location...')
-      return
+  // Read the current user's id from the JWT payload to check ownership.
+  const token = localStorage.getItem('geosocial_token')
+  let currentUserId = null
+  if (token) {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      currentUserId =
+        payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] ||
+        payload.nameid ||
+        payload.sub
+    } catch {
+      // malformed token — don't show delete button
     }
+  }
 
-    setSubmitting(true)
-    setError('')
+  const isOwner = user && currentUserId &&
+    post.userId?.toLowerCase() === currentUserId?.toLowerCase()
 
-    const res = await createPost(content.trim(), userLocation.lat, userLocation.lng)
-
+  const handleDelete = async (e) => {
+    // Prevent click bubbling up to the card's onClick
+    e.stopPropagation()
+    setDeleting(true)
+    const res = await deletePost(post.id)
     if (res.ok) {
-      setContent('')
-      // The new post will appear via SignalR so no need to manually add it here.
-      // If SignalR isn't connected it won't show until refresh, which is acceptable.
+      onDelete(post.id)
     } else {
-      setError('Failed to post. Are you logged in?')
+      setDeleting(false)
     }
-
-    setSubmitting(false)
   }
 
   return (
-    <div className="flex flex-col h-full bg-slate-900">
-      {/* Header */}
-      <div className="px-4 py-3 border-b border-slate-700">
-        <h2 className="text-white font-medium text-sm">Nearby Posts</h2>
-        <p className="text-slate-500 text-xs mt-0.5">{posts.length} within 5km</p>
-      </div>
+    <button
+      onClick={onClick}
+      className={`w-full text-left p-4 rounded-lg border transition-all duration-150 ${
+        highlighted
+          ? 'border-emerald-500 bg-slate-700'
+          : 'border-slate-700 bg-slate-800 hover:border-slate-500'
+      }`}
+    >
+      <p className="text-slate-100 text-sm leading-relaxed">{post.content}</p>
+      <div className="mt-2 flex items-center gap-2 text-xs text-slate-500">
+        <span className="text-emerald-500">📍</span>
+        <span>
+          {post.latitude.toFixed(4)}, {post.longitude.toFixed(4)}
+        </span>
+        <span className="ml-auto">{timeAgo(post.createdAt)}</span>
 
-      {/* Post compose box but only shown when logged in */}
-      {user && (
-        <div className="px-4 py-3 border-b border-slate-700">
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="What's happening here?"
-            rows={3}
-            maxLength={280}
-            className="w-full bg-slate-800 text-slate-100 placeholder-slate-500 text-sm rounded-lg px-3 py-2 border border-slate-600 focus:outline-none focus:border-emerald-500 resize-none"
-          />
-          {error && <p className="text-red-400 text-xs mt-1">{error}</p>}
-          <div className="flex items-center justify-between mt-2">
-            <span className="text-slate-600 text-xs">{content.length}/280</span>
-            <button
-              onClick={handleSubmit}
-              disabled={submitting || !content.trim()}
-              className="px-4 py-1.5 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >
-              {submitting ? 'Posting...' : 'Post'}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Feed */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
-        {posts.length === 0 ? (
-          <p className="text-slate-600 text-sm text-center mt-8">
-            No posts nearby yet.
-            {user ? ' Be the first!' : ' Log in to post.'}
-          </p>
-        ) : (
-          posts.map((post) => (
-            <PostCard
-              key={post.id}
-              post={post}
-              highlighted={post.id === highlightedId}
-              onClick={() => onPostClick(post)}
-            />
-          ))
+        {/* Only visible to the post's author */}
+        {isOwner && (
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="ml-2 text-slate-600 hover:text-red-400 transition-colors disabled:opacity-40"
+            title="Delete post"
+          >
+            {deleting ? '...' : '✕'}
+          </button>
         )}
       </div>
-    </div>
+    </button>
   )
 }
